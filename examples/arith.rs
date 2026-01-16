@@ -76,11 +76,7 @@ async fn main() {
         "/",
         axum::routing::post(|body: axum::body::Bytes| async move {
             match a_rs_jsonrpc::dispatch_rpc_request(&body).await {
-                Ok(resp_body) => {
-                    let val: serde_json::Value =
-                        serde_json::from_slice(&resp_body).unwrap_or_default();
-                    axum::response::Json(val)
-                }
+                Ok(resp_body) => resp_body,
                 Err(err) => response_error(&body, err),
             }
         }),
@@ -91,25 +87,24 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-fn response_error(
-    req_body: &axum::body::Bytes,
-    err: impl std::fmt::Display,
-) -> axum::response::Json<serde_json::Value> {
+fn response_error(req_body: &axum::body::Bytes, err: impl std::fmt::Display) -> String {
     let Ok((id, version)) = serde_json::from_slice::<serde_json::Value>(req_body).map(|v| {
         (
             v.get("id").cloned().unwrap_or(serde_json::Value::Null),
             v.get("jsonrpc").cloned().unwrap_or(serde_json::Value::Null),
         )
     }) else {
-        return axum::response::Json(serde_json::json!({
+        return serde_json::to_string(&serde_json::json!({
             "jsonrpc": null,
             "error": { "code": -32603, "message": err.to_string() },
             "id": null
-        }));
+        }))
+        .unwrap_or_default();
     };
-    axum::response::Json(serde_json::json!({
+    serde_json::to_string(&serde_json::json!({
         "jsonrpc": version,
         "error": { "code": -32603, "message": err.to_string() },
         "id": id
     }))
+    .unwrap_or_default()
 }

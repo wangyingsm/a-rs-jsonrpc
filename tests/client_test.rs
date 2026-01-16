@@ -66,8 +66,12 @@ async fn test_zero_params_request_with_rpc_method() {
 const HELLO: &str = "hello";
 
 // running all one param tests with `cargo run --example echo`
+
+/// Client tests for one parameter RPC requests to the echo service.
+/// for one parameter, you can use scalar, singleton array, option, singleton tuple, or rpc_method
+/// mode to send the request.
 #[tokio::test]
-async fn test_one_param_request_with_scalar() {
+async fn test_one_params_request_with_scalar() {
     init_tracing();
     let resp: JsonRpcResponse<String> = HELLO
         .send_v2_request(TEST_URL, APP_JSON, "echoArray")
@@ -78,7 +82,7 @@ async fn test_one_param_request_with_scalar() {
 }
 
 #[tokio::test]
-async fn test_one_param_request_with_singleton_array() {
+async fn test_one_params_request_with_singleton_array() {
     init_tracing();
     let params = vec![HELLO];
     let resp: JsonRpcResponse<String> = params
@@ -90,7 +94,7 @@ async fn test_one_param_request_with_singleton_array() {
 }
 
 #[tokio::test]
-async fn test_one_param_request_with_option() {
+async fn test_one_params_request_with_option() {
     init_tracing();
     let resp: JsonRpcResponse<String> = Some(HELLO)
         .send_v2_request(TEST_URL, APP_JSON, "echoArray")
@@ -121,13 +125,17 @@ async fn test_one_params_request_with_rpc_method() {
         version = "v2",
         mode = "array"
     )]
-    async fn test_echo(user_id: &str) -> Result<JsonRpcResponse<String>, RpcError> {}
+    async fn test_echo(msg: &str) -> Result<JsonRpcResponse<String>, RpcError> {}
     let resp = test_echo(HELLO).await.unwrap();
     assert_eq!(resp.jsonrpc, JsonRpcVersion::V2_0);
     assert_eq!(resp.result, Some(HELLO.to_string()))
 }
 
 // running all two params tests with `cargo run --example arith`
+
+/// Client tests for two parameter RPC requests to the arith service.
+/// for two parameters, you can use tuple, array, struct, or rpc_method
+/// mode to send the request.
 #[tokio::test]
 async fn test_two_params_request_with_tuple() {
     init_tracing();
@@ -165,14 +173,15 @@ async fn test_two_params_request_with_struct_array() {
         b: i32,
     }
     let params = AddParams { a: 10, b: 20 };
-    let resp: JsonRpcResponse<i32> = params
-        .send_v1_request(TEST_URL, APP_JSON, "addArray")
-        .await
-        .unwrap();
+    use a_rs_jsonrpc::JsonRpcClientCall;
+    let resp: JsonRpcResponse<i32> = params.call_rpc_v1().await.unwrap();
     assert_eq!(resp.jsonrpc, JsonRpcVersion::V1_0);
     assert_eq!(resp.result, Some(30));
 }
 
+/// construct a two parameter request send with array params with a struct object.
+/// then you can easily use the generated `call_rpc_v1` method to send the request.
+/// be sure to import `a_rs_jsonrpc::JsonRpcClientCall` trait into namespace.
 #[tokio::test]
 async fn test_two_params_request_with_rpc_method_array() {
     init_tracing();
@@ -189,6 +198,9 @@ async fn test_two_params_request_with_rpc_method_array() {
     assert_eq!(resp.result, Some(30));
 }
 
+/// construct a two parameter request send with object params with a struct object.
+/// then you can easily use the generated `call_rpc_v1_obj` method to send the request.
+/// be sure to import `a_rs_jsonrpc::JsonRpcClientCall` trait into namespace.
 #[tokio::test]
 async fn test_two_params_request_with_struct_obj() {
     init_tracing();
@@ -203,10 +215,8 @@ async fn test_two_params_request_with_struct_obj() {
         rhs: i32,
     }
     let params = AddParams { lhs: 10, rhs: 20 };
-    let resp: JsonRpcResponse<i32> = params
-        .send_v1_request(TEST_URL, APP_JSON, "addArray")
-        .await
-        .unwrap();
+    use a_rs_jsonrpc::JsonRpcClientCall;
+    let resp: JsonRpcResponse<i32> = params.call_rpc_v1_obj().await.unwrap();
     assert_eq!(resp.jsonrpc, JsonRpcVersion::V1_0);
     assert_eq!(resp.result, Some(30));
 }
@@ -217,9 +227,9 @@ async fn test_two_params_request_with_rpc_method_obj() {
     #[rpc_method(
         url = "http://localhost:3000/",
         content_type = "application/json",
-        method = "addArray",
+        method = "addObj",
         version = "v1",
-        mode = "array"
+        mode = "obj"
     )]
     async fn add(lhs: i32, rhs: i32) -> Result<JsonRpcResponse<i32>, RpcError> {}
     let resp = add(10, 20).await.unwrap();

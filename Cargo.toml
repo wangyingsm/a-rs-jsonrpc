@@ -22,7 +22,6 @@ proc-macros = { path = "proc-macros" }
 tracing = "0.1.44"
 futures = "0.3.31"
 linkme = "0.3.35"
-serde_with = "3.16.1"
 
 [dev-dependencies]
 axum = { version = "0.8.8", features = ["macros"] }

@@ -349,13 +349,13 @@ pub fn rpc_method(attr: TokenStream, item: TokenStream) -> TokenStream {
             let val = ::serde_json::to_value(helper).unwrap_or(::serde_json::Value::Object(::serde_json::Map::new()));
             body.set_params(val);
 
-            let resp = ::reqwest::Client::new().post(#url).header("Content-Type", #content_type).json(&body).send().await
-                .map_err(|e| #crate_root::error::RpcError::NetworkError(e.to_string()))?;
+            tracing::debug!("jsonrpc request body: {:?}", serde_json::to_string(&body));
+            let resp = ::reqwest::Client::new().post(#url).header("Content-Type", #content_type).json(&body).send().await?;
 
-            let text = resp.text().await.map_err(|e| #crate_root::error::RpcError::InternalError(e.to_string()))?;
+            let text = resp.text().await?;
+            tracing::debug!("jsonrpc response body: {}", text);
 
-            ::serde_json::from_str::<#crate_root::response::JsonRpcResponse<#inner_t>>(&text)
-                .map_err(|e| #crate_root::error::RpcError::from(e))
+            Ok(::serde_json::from_str::<#crate_root::response::JsonRpcResponse<#inner_t>>(&text)?)
         }
     };
 
@@ -513,7 +513,7 @@ pub fn jsonrpc_service_fn_array(attr: TokenStream, item: TokenStream) -> TokenSt
                 Box::pin(async move {
                     use #rpc::JsonRpcServiceFn;
                     let response = #struct_name_ident::handle(&req_bytes).await?;
-                    Ok(#rpc::serde_json::to_vec(&response)?)
+                    Ok(#rpc::serde_json::to_string(&response)?)
                 })
             },
         };
@@ -637,7 +637,7 @@ pub fn jsonrpc_service_fn_obj(attr: TokenStream, item: TokenStream) -> TokenStre
                 Box::pin(async move {
                     use #rpc::JsonRpcServiceFn;
                     let response = #request_struct_ident::handle(&req_data).await?;
-                    Ok(#rpc::serde_json::to_vec(&response)?)
+                    Ok(#rpc::serde_json::to_string(&response)?)
                 })
             },
         };

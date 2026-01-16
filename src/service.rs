@@ -33,7 +33,7 @@ pub struct RpcServiceEntry {
 #[distributed_slice]
 pub static RPC_SERVICES: [RpcServiceEntry];
 
-type RpcHandlerFn = fn(req: &[u8]) -> BoxFuture<'static, Result<Vec<u8>, crate::error::RpcError>>;
+type RpcHandlerFn = fn(req: &[u8]) -> BoxFuture<'static, Result<String, crate::error::RpcError>>;
 
 static ROUTE_TABLE: LazyLock<HashMap<&'static str, RpcHandlerFn>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -45,7 +45,7 @@ static ROUTE_TABLE: LazyLock<HashMap<&'static str, RpcHandlerFn>> = LazyLock::ne
     m
 });
 
-pub async fn dispatch(body: &[u8]) -> Result<Vec<u8>, RpcError> {
+pub async fn dispatch(body: &[u8]) -> Result<String, RpcError> {
     let MethodEnvelope { method } = serde_json::from_slice(body)?;
     if let Some(handler) = ROUTE_TABLE.get(method) {
         return handler(body).await;
