@@ -1,3 +1,14 @@
+//! # JSON-RPC Procedural Macros
+//!
+//! This crate provides a suite of procedural macros to automate the generation of
+//! JSON-RPC 1.0/2.0 clients and services. It bridges the gap between standard Rust
+//! functions/structs and the JSON-RPC wire format.
+//!
+//! ## Core Macros
+//! - **`JsonRpcClient`**: A derive macro for request structures.
+//! - **`rpc_method`**: An attribute macro for defining client-side calling interfaces.
+//! - **`jsonrpc_service_fn_array`**: A server-side attribute for positional (array) parameters.
+//! - **`jsonrpc_service_fn_obj`**: A server-side attribute for named (object) parameters.
 use convert_case::{Case, Casing};
 use darling::{FromDeriveInput, FromField, FromVariant};
 use proc_macro::TokenStream;
@@ -26,6 +37,20 @@ struct VariantOpts {
     skip: bool,
 }
 
+/// # `JsonRpcClient`
+///
+/// A derive macro that implements `JsonRpcClient` and `JsonRpcClientCall` traits for
+/// a struct or enum.
+///
+/// It supports two modes of parameter serialization:
+/// 1. **Positional (Array)**: Maps fields/variants to a JSON array.
+/// 2. **Named (Object)**: Maps the entire structure to a JSON object.
+///
+/// ### Container Attributes
+/// - `#[jsonrpc(url = "...", content_type = "...", method = "...")]`
+///
+/// ### Field/Variant Attributes
+/// - `#[jsonrpc(skip)]`: Excludes the field or variant from parameter serialization.
 #[proc_macro_derive(JsonRpcClient, attributes(jsonrpc))]
 pub fn derive_json_rpc_client(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -278,6 +303,24 @@ fn default_content_type() -> String {
     "application/json".to_string()
 }
 
+/// # `rpc_method`
+///
+/// **Client-side attribute macro.**
+///
+/// Transforms an asynchronous function signature into a complete JSON-RPC client caller.
+/// It automatically handles parameter packing and HTTP communication via `reqwest`.
+///
+/// ### Arguments
+/// - `url`: The RPC endpoint URL.
+/// - `method`: The remote method name.
+/// - `mode`: (Optional) Use `"obj"` for named parameters.
+/// - `version`: (Optional) `"v1"` or `"v2"`.
+///
+/// ### Example
+/// ```rust
+/// #[rpc_method(url = "http://localhost:8080", method = "sum")]
+/// async fn get_sum(a: i32, b: i32) -> Result<JsonRpcResponse<i32>, RpcError> {}
+/// ```
 #[proc_macro_attribute]
 pub fn rpc_method(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr_args = match darling::ast::NestedMeta::parse_meta_list(attr.into()) {
@@ -399,6 +442,18 @@ fn extract_actual_data_type(rt: &syn::ReturnType) -> proc_macro2::TokenStream {
     panic!("Macro requires return type: Result<JsonRpcResponse<T>, E>");
 }
 
+/// # `jsonrpc_service_fn_array`
+///
+/// **Server-side attribute macro for positional parameters.**
+///
+/// Use this on an `async fn` to register it as a JSON-RPC service. Incoming
+/// `params` are expected to be a JSON Array.
+///
+/// ### Features
+/// 1. Generates a boilerplate `RequestArray` struct for deserialization.
+/// 2. Implements `JsonRpcServiceFn` for the generated struct.
+/// 3. Automatically registers the function into the global `RPC_SERVICES` slice
+///    using `linkme` for zero-cost discovery.
 #[proc_macro_attribute]
 pub fn jsonrpc_service_fn_array(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
@@ -539,6 +594,16 @@ fn extract_result_t(rt: &ReturnType) -> proc_macro2::TokenStream {
     panic!("Unable to extract Result<T> type from function return type");
 }
 
+/// # `jsonrpc_service_fn_obj`
+///
+/// **Server-side attribute macro for named parameters.**
+///
+/// Similar to `jsonrpc_service_fn_array`, but expects `params` to be a JSON Object.
+/// It automatically maps JSON keys to function argument names using `camelCase`.
+///
+/// ### Registration
+/// The function is registered as a `RpcServiceEntry` at compile-time, allowing
+/// the server dispatcher to find it by the `method` string.
 #[proc_macro_attribute]
 pub fn jsonrpc_service_fn_obj(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);

@@ -1,12 +1,33 @@
-use serde::Serialize;
+//! # JSON-RPC Client Module
+//!
+//! This module provides the infrastructure for making JSON-RPC calls. It includes:
+//! - The [`JsonRpcClient`] trait for sending requests.
+//! - Extensive implementations for Rust primitives, tuples, and collections.
+//! - The [`rpc_method`] macro for high-level, declarative API definitions.
+//!
+//! The library uses a "parameter-first" approach where you can call RPC methods
+//! directly on the data you wish to send as parameters.
 
 use crate::{JsonRpcId, error::RpcError, request::JsonRpcRequest, response::JsonRpcResponse};
+use serde::Serialize;
 
 pub use proc_macros::JsonRpcClient;
 pub use proc_macros::rpc_method;
 
+/// The core trait for sending JSON-RPC requests.
+///
+/// This trait is implemented for a wide variety of types (scalars, tuples, vectors, etc.),
+/// allowing them to be used as the `params` field in a JSON-RPC call.
+///
+/// ### Example: Sending a request from a tuple
+/// ```rust
+/// let params = (10, "hello");
+/// let response = params.send_v2_request::<String>(url, "application/json", "myMethod").await?;
+/// ```
+
 #[async_trait::async_trait]
 pub trait JsonRpcClient {
+    /// Sends a JSON-RPC 1.0 request using `self` as the parameters (serialized as an array).
     async fn send_v1_request<R>(
         &self,
         url: &str,
@@ -16,6 +37,7 @@ pub trait JsonRpcClient {
     where
         R: serde::de::DeserializeOwned;
 
+    /// Sends a JSON-RPC 2.0 request using `self` as the parameters (serialized as an array).
     async fn send_v2_request<R>(
         &self,
         url: &str,
@@ -25,6 +47,8 @@ pub trait JsonRpcClient {
     where
         R: serde::de::DeserializeOwned;
 
+    /// Sends a JSON-RPC 1.0 request using `self` as the parameters (serialized as an object).
+    /// Defaults to array-style if not overridden.
     async fn send_v1_request_obj<R>(
         &self,
         url: &str,
@@ -37,6 +61,8 @@ pub trait JsonRpcClient {
         self.send_v1_request(url, content_type, method).await
     }
 
+    /// Sends a JSON-RPC 2.0 request using `self` as the parameters (serialized as an object).
+    /// Defaults to array-style if not overridden.
     async fn send_v2_request_obj<R>(
         &self,
         url: &str,
@@ -50,6 +76,8 @@ pub trait JsonRpcClient {
     }
 }
 
+/// A helper trait for executing RPC calls.
+/// Typically used by internal macro expansions to simplify the call site.
 #[async_trait::async_trait]
 pub trait JsonRpcClientCall {
     async fn call_rpc_v1<R>(&self) -> Result<JsonRpcResponse<R>, RpcError>
@@ -68,6 +96,14 @@ pub trait JsonRpcClientCall {
     where
         R: serde::de::DeserializeOwned;
 }
+
+// Internal implementations for:
+// - Scalars: i8-i64, u8-u64, f32/f64, bool (Serialized as single-element arrays)
+// - Tuples: (T1, T2, ...) up to 16 elements (Serialized as arrays)
+// - Collections: Vec<T>, &[T] (Serialized as arrays)
+// - Strings: String, &str (Serialized as single-element arrays)
+// - Options: Some(T) or None
+// - Unit type: () (Serialized as empty parameters)
 
 macro_rules! impl_scalar_jsonrpc_client {
     ($rec:ty) => {
