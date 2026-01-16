@@ -12,6 +12,9 @@ fn init_tracing() {
 }
 
 // runing all zero params tests with `cargo run --example unit`
+
+/// Client tests for no parameter RPC to the `ping` service.
+/// for no parameter, you can use unit, empty slice, None or rpc_method to send request.
 #[tokio::test]
 async fn test_zero_params_request_with_unit() {
     init_tracing();
