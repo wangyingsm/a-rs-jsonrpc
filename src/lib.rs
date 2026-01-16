@@ -101,13 +101,13 @@ pub mod request;
 pub mod response;
 pub mod service;
 
+pub use a_rs_jsonrpc_macros::rpc_method;
 pub use async_trait;
 pub use client::JsonRpcClient;
 pub use client::JsonRpcClientCall;
 pub use error::RpcError;
 pub use id::Id as JsonRpcId;
 pub use linkme;
-pub use proc_macros::rpc_method;
 pub use request::JsonRpcRequest;
 pub use response::JsonRpcResponse;
 pub use serde;

@@ -6,13 +6,13 @@ version = 4
 name = "a-rs-jsonrpc"
 version = "0.1.0"
 dependencies = [
+ "a-rs-jsonrpc-macros",
  "async-trait",
  "axum",
  "darling 0.23.0",
  "futures",
  "linkme",
  "proc-macro2",
- "proc-macros",
  "quote",
  "reqwest",
  "serde",
@@ -22,6 +22,19 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "a-rs-jsonrpc-macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce94784750e8b4895d618b2db989b1154f3ff3a3c8b2f112d65f080905603257"
+dependencies = [
+ "convert_case",
+ "darling 0.20.11",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -981,17 +994,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "proc-macros"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "darling 0.20.11",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

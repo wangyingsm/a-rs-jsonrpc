@@ -11,8 +11,8 @@
 use crate::{JsonRpcId, error::RpcError, request::JsonRpcRequest, response::JsonRpcResponse};
 use serde::Serialize;
 
-pub use proc_macros::JsonRpcClient;
-pub use proc_macros::rpc_method;
+pub use a_rs_jsonrpc_macros::JsonRpcClient;
+pub use a_rs_jsonrpc_macros::rpc_method;
 
 /// The core trait for sending JSON-RPC requests.
 ///

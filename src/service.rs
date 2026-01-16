@@ -17,9 +17,9 @@
 //! 4. Use [`dispatch()`] to process raw request bytes.
 
 use crate::RpcError;
+pub use a_rs_jsonrpc_macros::{jsonrpc_service_fn_array, jsonrpc_service_fn_obj};
 use futures::future::BoxFuture;
 use linkme::distributed_slice;
-pub use proc_macros::{jsonrpc_service_fn_array, jsonrpc_service_fn_obj};
 use serde::Deserialize;
 use std::{collections::HashMap, sync::LazyLock};
 

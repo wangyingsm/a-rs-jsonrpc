@@ -1,5 +1,5 @@
 [package]
-name = "proc-macros"
+name = "a-rs-jsonrpc-macros"
 version = "0.1.0"
 edition = "2021"
 authors = ["Wang Ying <yingge.gzb@gmail.com>"]

@@ -1,5 +1,5 @@
 use a_rs_jsonrpc::{JsonRpcClient, JsonRpcResponse, RpcError, request::JsonRpcVersion};
-use proc_macros::rpc_method;
+use a_rs_jsonrpc_macros::rpc_method;
 use serde::Serialize;
 
 const TEST_URL: &str = "http://localhost:3000/";
